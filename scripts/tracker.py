@@ -43,8 +43,10 @@ use on Amazon Elastic Beanstalk (and possibly other systems).
 """
 
 
+from r2.lib.scribe_logger import ScribeLogger
 import cStringIO
 import hashlib
+import json
 import time
 
 from ConfigParser import RawConfigParser
@@ -139,6 +141,9 @@ def fetch_trackers():
             continue
         text = ''.join((ip, fullname, tracking_secret))
         hashed[fullname] = hashlib.sha1(text).hexdigest()
+    # place the scribe logger code here for view tracking
+    logger = ScribeLogger()
+    logger.log('ad_imp', json.dumps(hashed)) 
     return jsonpify(jsonp_callback, hashed)
 
 
@@ -161,14 +166,20 @@ def click_redirect():
     response.headers['Pragma'] = 'no-cache'
     response.headers['Date'] = now
     response.headers['Expires'] = now
+    # Place the scribe logger code here for click tracking
+    logger = ScribeLogger()
+    logger.log('ad_click', destination) 
     return response
 
 
 if __name__ == "__main__":
+    #application.run()
     # package up for elastic beanstalk
+    #'''
     import zipfile
 
     with zipfile.ZipFile("/tmp/tracker.zip", "w", zipfile.ZIP_DEFLATED) as zip:
         zip.write(__file__, "application.py")
         zip.writestr("production.ini", config.to_config())
         zip.writestr("requirements.txt", "\n".join(REQUIRED_PACKAGES) + "\n")
+    #'''
